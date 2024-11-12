@@ -93,7 +93,7 @@ def iterate(data: str, portrait: str) -> str:
 def main():
     initialize()
     portrait = initial_portrait
-    dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+    dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     os.mkdir(f"{path_portrait}/{dirname}")
     for i, data in enumerate(list_data):
         print()
