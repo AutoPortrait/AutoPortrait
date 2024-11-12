@@ -7,12 +7,12 @@ client: ZhipuAI
 
 path_interview_directory = "data/interview"
 path_interview_censored_directory = "data/interview/censored"
-path_interview_index = "data/interview/index.txt"
+path_interview_group_index = "data/interview/index-groups.txt"
 path_initial_portrait = "prompt/初始人物画像.txt"
 path_prompt_iterate = "prompt/迭代人物画像.txt"
 path_portrait = "data/portrait"
 
-list_data: list[str]
+list_data: list[str, list[str]] # group name, data list
 initial_portrait: str
 prompt_iterate: str
 
@@ -54,20 +54,25 @@ def initialize():
     client = ZhipuAI(api_key=zhipu_key)
 
     global list_data, initial_portrait, prompt_iterate
-    list_data = []
-    with open(path_interview_index, "r", encoding="utf-8") as file:
-        filenames = file.read().splitlines()
-        for filename in filenames:
-            censored_filename = f"{path_interview_censored_directory}/{filename}"
-            if os.path.exists(censored_filename) == False:
-                print(f"正在进行内容安全性预处理： {filename}")
-                with open(f"{path_interview_directory}/{filename}", "r", encoding="utf-8") as file:
-                    data = file.read()
-                    censored_data = censor(data)
-                with open(censored_filename, "w", encoding="utf-8") as file:
-                    file.write(censored_data)
-            with open(censored_filename, "r", encoding="utf-8") as file:
-                list_data.append(file.read())
+    list_data = list[str, list[str]]()
+    with open(path_interview_group_index, "r", encoding="utf-8") as group_index_file:
+        group_index_lines = group_index_file.read().splitlines()
+        group_index_pairs = [line.split(sep=",") for line in group_index_lines]
+        for group_index_pair in group_index_pairs:
+            list_data.append([group_index_pair[0], []])
+            with open(f"{path_interview_directory}/{group_index_pair[1]}", "r", encoding="utf-8") as group_index_file:
+                filenames = group_index_file.read().splitlines()
+                for filename in filenames:
+                    censored_filename = f"{path_interview_censored_directory}/{filename}"
+                    if os.path.exists(censored_filename) == False:
+                        print(f"正在进行内容安全性预处理： {filename}")
+                        with open(f"{path_interview_directory}/{filename}", "r", encoding="utf-8") as file:
+                            data = file.read()
+                            censored_data = censor(data)
+                        with open(censored_filename, "w", encoding="utf-8") as file:
+                            file.write(censored_data)
+                    with open(censored_filename, "r", encoding="utf-8") as file:
+                        list_data[len(list_data) - 1][1].append(file.read())
     with open(path_initial_portrait, "r", encoding="utf-8") as file:
         initial_portrait = file.read()
     with open(path_prompt_iterate, "r", encoding="utf-8") as file:
@@ -92,20 +97,19 @@ def iterate(data: str, portrait: str) -> str:
 
 def main():
     initialize()
-    portrait = initial_portrait
     dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     os.mkdir(f"{path_portrait}/{dirname}")
-    for i, data in enumerate(list_data):
-        print()
+    for group in list_data:
+        os.mkdir(f"{path_portrait}/{dirname}/{group[0]}")
         print("-" * os.get_terminal_size().columns)
-        print(f"正在进行第{i+1}轮迭代 ...")
-
-        portrait = iterate(data, portrait)
-        with open(f"{path_portrait}/{dirname}/{i}.txt", "w", encoding="utf-8") as file:
-            file.write(portrait)
-
-        print("画像：")
-        print(portrait)
+        print(f"正在处理 group '{group[0]}':")
+        print("-" * os.get_terminal_size().columns)
+        portrait = initial_portrait
+        for i, data in enumerate(group[1]):
+            print(f"正在进行第{i+1}轮迭代")
+            portrait = iterate(data, portrait)
+            with open(f"{path_portrait}/{dirname}/{group[0]}/{i}.txt", "w", encoding="utf-8") as file:
+                file.write(portrait)
 
 
 if __name__ == "__main__":
