@@ -81,7 +81,7 @@ def initialize():
 
 def iterate(data: str, portrait: str) -> str:
     result = client.chat.completions.create(
-        model="glm-4-plus",
+        model="GLM-4-Air",
         messages=[
             {"role": "system", "content": prompt_iterate},
             {"role": "user", "content": data},
