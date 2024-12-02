@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from zhipuai import ZhipuAI, APIRequestFailedError
 
+
 class LLMProcessError(Exception):
     def __init__(self, inner_exception: Exception):
         self.inner_exception = inner_exception
@@ -10,8 +11,8 @@ class LLMProcessError(Exception):
 
 class LLMAbstract(Protocol):
     # May raise LLMProcessError
-    def process(self, messages) -> str:
-        ...
+    def process(self, messages) -> str: ...
+
 
 class LLMZhipuAI:
     def __init__(self):
@@ -33,5 +34,5 @@ class LLMZhipuAI:
         except APIRequestFailedError as e:
             raise LLMProcessError(e)
 
-def LLMCurrent() -> LLMAbstract:
-    return LLMZhipuAI()
+
+LLMCurrent: LLMAbstract = LLMZhipuAI()
