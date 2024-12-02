@@ -5,8 +5,6 @@ path_interview_directory = "data/interview"
 path_interview_censored_directory = "data/interview/censored"
 path_interview_group_index = "data/interview/index-groups.txt"
 path_interview_uncertain_index = "data/interview/index-uncertain.txt"
-path_initial_portrait = "prompt/初始人物画像.txt"
-path_prompt_iterate = "prompt/迭代人物画像.txt"
 
 
 def censor(text: str) -> str:
@@ -64,7 +62,3 @@ class Input:
             filenames = uncertain_index_file.read().splitlines()
             for filename in filenames:
                 self.uncertain_data.append(load_interview(filename))
-        with open(path_initial_portrait, "r", encoding="utf-8") as file:
-            self.initial_portrait = file.read()
-        with open(path_prompt_iterate, "r", encoding="utf-8") as file:
-            self.prompt_iterate = file.read()
