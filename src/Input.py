@@ -57,8 +57,8 @@ class Input:
                     filenames = group_index_file.read().splitlines()
                     for filename in filenames:
                         self.list_data[len(self.list_data) - 1][1].append(load_interview(filename))
-        self.uncertain_data = []
+        self.uncertain_data = list[tuple[str, str]]()  # filename, data
         with open(path_interview_uncertain_index, "r", encoding="utf-8") as uncertain_index_file:
             filenames = uncertain_index_file.read().splitlines()
             for filename in filenames:
-                self.uncertain_data.append(load_interview(filename))
+                self.uncertain_data.append([filename, load_interview(filename)])
