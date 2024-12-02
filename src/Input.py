@@ -4,6 +4,7 @@ import os
 path_interview_directory = "data/interview"
 path_interview_censored_directory = "data/interview/censored"
 path_interview_group_index = "data/interview/index-groups.txt"
+path_interview_uncertain_index = "data/interview/index-uncertain.txt"
 path_initial_portrait = "prompt/初始人物画像.txt"
 path_prompt_iterate = "prompt/迭代人物画像.txt"
 
@@ -31,6 +32,19 @@ def censor(text: str) -> str:
         raise BaseException("Impossible")
 
 
+def load_interview(filename: str) -> str:
+    censored_filename = f"{path_interview_censored_directory}/{filename}"
+    if os.path.exists(censored_filename) == False:
+        print(f"正在进行内容安全性预处理： {filename}")
+        with open(f"{path_interview_directory}/{filename}", "r", encoding="utf-8") as file:
+            data = file.read()
+            censored_data = censor(data)
+        with open(censored_filename, "w", encoding="utf-8") as file:
+            file.write(censored_data)
+    with open(censored_filename, "r", encoding="utf-8") as file:
+        return file.read()
+
+
 class Input:
     def __init__(self):
         self.list_data = list[str, list[str]]()  # group name, data list
@@ -44,18 +58,12 @@ class Input:
                 ) as group_index_file:
                     filenames = group_index_file.read().splitlines()
                     for filename in filenames:
-                        censored_filename = f"{path_interview_censored_directory}/{filename}"
-                        if os.path.exists(censored_filename) == False:
-                            print(f"正在进行内容安全性预处理： {filename}")
-                            with open(
-                                f"{path_interview_directory}/{filename}", "r", encoding="utf-8"
-                            ) as file:
-                                data = file.read()
-                                censored_data = censor(data)
-                            with open(censored_filename, "w", encoding="utf-8") as file:
-                                file.write(censored_data)
-                        with open(censored_filename, "r", encoding="utf-8") as file:
-                            self.list_data[len(self.list_data) - 1][1].append(file.read())
+                        self.list_data[len(self.list_data) - 1][1].append(load_interview(filename))
+        self.uncertain_data = []
+        with open(path_interview_uncertain_index, "r", encoding="utf-8") as uncertain_index_file:
+            filenames = uncertain_index_file.read().splitlines()
+            for filename in filenames:
+                self.uncertain_data.append(load_interview(filename))
         with open(path_initial_portrait, "r", encoding="utf-8") as file:
             self.initial_portrait = file.read()
         with open(path_prompt_iterate, "r", encoding="utf-8") as file:
