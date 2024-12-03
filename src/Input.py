@@ -12,10 +12,16 @@ def censor(text: str) -> str:
         return text
     try:
         print(f"检查 {len(text)} 字 ... ", end="", flush=True)
-        LLMCurrent.process(text)
+        LLMCurrent.process(
+            [
+                {"role": "user", "content": text},
+            ]
+        )
         print("合规")
         return text
-    except LLMProcessError:
+    except LLMProcessError as e:
+        if str(e).find("不安全或敏感内容") == -1:
+            raise e
         print("违规")
         lines = text.splitlines()
         if len(lines) == 1:
