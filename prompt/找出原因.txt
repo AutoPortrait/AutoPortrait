@@ -60,7 +60,7 @@ Please find reasons among:
 12 人工智能是一个新兴学科
 INPUT END
 ANALYSIS BEGIN
-略去具体分析。可以发现，每一个事情都不是“人工智能是一个生机勃勃的学科”的原因。
+略去具体分析。可以发现，每一个事情都不是“人工智能这一概念是由麦卡锡、明斯基等科学家于1956年提出的”的原因。
 于是输出NONE
 ANALYSIS END
 OUTPUT BEGIN
