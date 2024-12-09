@@ -4,7 +4,7 @@ path_prompt_classify = "prompt/访谈和画像的匹配度.txt"
 path_prompt_cut_interview = "prompt/切割访谈记录.txt"
 path_prompt_extract_key_points = "prompt/提取要点.txt"
 path_prompt_find_causes = "prompt/找出原因.txt"
-path_prompt_find_effects = "prompt/找出影响.txt"
+path_prompt_find_effects = "prompt/找出结果.txt"
 
 
 class Prompts:

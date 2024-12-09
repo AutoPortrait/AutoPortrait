@@ -12,11 +12,7 @@ def censor(text: str) -> str:
         return text
     try:
         print(f"检查 {len(text)} 字 ... ", end="", flush=True)
-        LLMCurrent.process(
-            [
-                {"role": "user", "content": text},
-            ]
-        )
+        LLMCurrent.process("", text)
         print("合规")
         return text
     except LLMProcessError as e:
@@ -62,7 +58,9 @@ class Input:
                 ) as group_index_file:
                     filenames = group_index_file.read().splitlines()
                     for filename in filenames:
-                        self.classified[len(self.classified) - 1][1].append(load_interview(filename))
+                        self.classified[len(self.classified) - 1][1].append(
+                            load_interview(filename)
+                        )
         self.uncertain = list[tuple[str, str]]()  # filename, data
         with open(path_interview_uncertain_index, "r", encoding="utf-8") as uncertain_index_file:
             filenames = uncertain_index_file.read().splitlines()

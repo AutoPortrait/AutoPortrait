@@ -11,10 +11,9 @@ class LLMProcessError(Exception):
 
 class LLMAbstract(Protocol):
     # May raise LLMProcessError
-    def process(self, messages) -> str: ...
+    def process(self, system_message: str, user_message: str) -> str: ...
 
-    # May raise LLMProcessError
-    def batch_process(self, messages) -> list[str]: ...
+    def token_usage(self) -> int: ...
 
 
 class LLMZhipuAI:
@@ -26,20 +25,28 @@ class LLMZhipuAI:
         self.top_p = top_p
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.token_count = 0
 
-    def process(self, messages) -> str:
+    def process(self, system_message: str, user_message: str) -> str:
         try:
             result = self.client.chat.completions.create(
                 model=self.model_name,
-                messages=messages,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_message},
+                ],
                 top_p=self.top_p,
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
                 stream=False,  # 关闭流模式，直接接收完整响
             )
+            self.token_count += result.usage.total_tokens
             return result.choices[0].message.content
         except APIRequestFailedError as e:
             raise LLMProcessError(e)
+
+    def token_usage(self) -> int:
+        return self.token_count
 
 
 LLMCurrent: LLMAbstract = LLMZhipuAI("GLM-4-Air", 0.7, 0.80, 4095)

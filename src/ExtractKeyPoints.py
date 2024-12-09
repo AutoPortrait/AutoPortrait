@@ -7,12 +7,7 @@ prompts = Prompts()
 
 def extract_key_points(input: str) -> list[str]:
     while True:
-        result = LLMCurrent.process(
-            [
-                {"role": "system", "content": prompts.prompt_extract_key_points},
-                {"role": "user", "content": input},
-            ]
-        ).strip()
+        result = LLMCurrent.process(prompts.prompt_extract_key_points, input).strip()
         if result.find("1.") != -1:
             warnings.warn(f"LLM output includes '1.'. Content:\n{result}\nRetry.")
             continue

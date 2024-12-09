@@ -29,20 +29,11 @@ class InterviewEntry:
 prompts = Prompts()
 
 
-def query_split_result(original_text: str) -> str:
-    return LLMCurrent.process(
-        [
-            {"role": "system", "content": prompts.prompt_cut_interview},
-            {"role": "user", "content": original_text},
-        ]
-    )
-
-
 def split(original_text: str) -> list[str]:
     entry_str_list = to_list(remove_metadata(original_text))
     entry_list = [InterviewEntry(entry_str) for entry_str in entry_str_list]
     while True:
-        times_str = query_split_result(original_text)
+        times_str = LLMCurrent.process(prompts.prompt_cut_interview, original_text)
         times_list = times_str.strip().split("\n")
         fail = False
         for time in times_list:

@@ -1,86 +1,62 @@
 from LLM import LLMCurrent
 from Prompts import Prompts
-from tqdm import tqdm
 import warnings
+import numpy as np
 
 prompts = Prompts()
 
 
-def query_causes(thing: str, possible_causes: list[str]) -> str:
-    possible_causes_with_index = [f"{i + 1} {cause}" for i, cause in enumerate(possible_causes)]
-    input = thing + "\n\nPlease find reasons among:\n" + "\n".join(possible_causes_with_index)
-    return LLMCurrent.process(
-        [
-            {"role": "system", "content": prompts.prompt_find_causes},
-            {"role": "user", "content": input},
-        ]
-    ).strip()
-
-
-def query_effects(thing: str, possible_effects: list[str]) -> str:
-    possible_effects_with_index = [f"{i + 1} {effect}" for i, effect in enumerate(possible_effects)]
-    input = thing + "\n\nPlease find effects among:\n" + "\n".join(possible_effects_with_index)
-    return LLMCurrent.process(
-        [
-            {"role": "system", "content": prompts.prompt_find_effects},
-            {"role": "user", "content": input},
-        ]
-    ).strip()
-
-
-def find_relations(querier, thing: str, possible_causes: list[str]) -> list[int]:
+def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
+    message = "\n".join([f"{i + 1} {thing}" for i, thing in enumerate(things)])
     while True:
-        result = querier(thing, possible_causes)
+        result = LLMCurrent.process(prompt, message).strip()
         if result == "NONE":
             return []
-        idx_str_list = result.split(" ")
-        idx_list = []
+        lines = result.split("\n")
         failed = False
-        for idx_str in idx_str_list:
+        relations = []
+        for line in lines:
+            parts = line.split(" ")
+            if len(parts) < 2:
+                failed = True
+                break
             try:
-                idx = int(idx_str)
-                if idx < 1 or idx > len(possible_causes):
-                    failed = True
-                    break
-                idx_list.append(idx - 1)
+                idx_1 = int(parts[0])
+                idx_2 = int(parts[1])
             except ValueError:
                 failed = True
                 break
+            if idx_1 < 1 or idx_1 > len(things) or idx_2 < 1 or idx_2 > len(things):
+                failed = True
+                break
+            relations.append((idx_1 - 1, idx_2 - 1))
         if failed:
-            warnings.warn(f"LLM output '{result}' includes invalid index. Retry.")
+            warnings.warn(f"Failed to parse result:\n{result}\nRetry.")
             continue
         else:
-            return idx_list
+            return relations
 
 
-def create_relation_matrix(
-    querier, things: list[str], show_progress: bool = False
-) -> list[list[int]]:
-    matrix = []
-    for i, thing in tqdm(
-        enumerate(things),
-        desc="Creating Relation Matrix",
-        total=len(things),
-        disable=not show_progress,
-    ):
-        possible_causes = [thing for j, thing in enumerate(things) if i != j]
-        causes = find_relations(querier, thing, possible_causes)
-        row = []
-        for j in range(0, i):
-            row.append(int(j in causes))
-        row.append(0)
-        for j in range(i + 1, len(things)):
-            row.append(int(j - 1 in causes))
-        matrix.append(row)
+def create_relation_matrix(prompt: str, things: list[str]) -> np.array:
+    relations = query_relations(prompt, things)
+    matrix = np.zeros((len(things), len(things)))
+    for relation in relations:
+        matrix[relation[0]][relation[1]] = 1
     return matrix
 
 
-def create_cause_matrix(things: list[str], show_progress: bool = False) -> list[list[int]]:
-    return create_relation_matrix(query_causes, things, show_progress)
-
-
-def create_effect_matrix(things: list[str], show_progress: bool = False) -> list[list[int]]:
-    return create_relation_matrix(query_effects, things, show_progress)
+def create_cause_effect_matrix(things: list[str]) -> list[list[int]]:
+    cause_matrixes = []
+    for i in range(3):
+        cause_matrixes.append(create_relation_matrix(prompts.prompt_find_causes, things))
+    effect_matrixes = []
+    for i in range(3):
+        effect_matrixes.append(create_relation_matrix(prompts.prompt_find_effects, things))
+    result_matrix = np.zeros((len(things), len(things)))
+    for i in range(3):
+        result_matrix += 1 / 6 * cause_matrixes[i] + 1 / 6 * np.transpose(effect_matrixes[i])
+    result_matrix = np.where(result_matrix > 0.5, 1, 0)
+    return result_matrix.tolist()
 
 
 def main():
@@ -111,52 +87,15 @@ def main():
     key_points = extract_key_points(input)
     for i, key_point in enumerate(key_points):
         print(f"{i + 1}. {key_point}")
-    cause_matrix = create_cause_matrix(key_points, show_progress=True)
-    print("Cause Matrix:")
-    for row in cause_matrix:
-        print(row)
-    effect_matrix = create_effect_matrix(key_points, show_progress=True)
-    print("Effect Matrix:")
-    for row in effect_matrix:
-        print(row)
 
-    # calculate Cause Matrix and Effect Matrix's similarity
-    without_transpose_11 = 0
-    without_transpose_10 = 0
-    without_transpose_01 = 0
-    without_transpose_00 = 0
-    with_transpose_11 = 0
-    with_transpose_10 = 0
-    with_transpose_01 = 0
-    with_transpose_00 = 0
-    for i in range(len(key_points)):
-        for j in range(len(key_points)):
-            if cause_matrix[i][j] == 1 and effect_matrix[i][j] == 1:
-                without_transpose_11 += 1
-            if cause_matrix[i][j] == 1 and effect_matrix[i][j] == 0:
-                without_transpose_10 += 1
-            if cause_matrix[i][j] == 0 and effect_matrix[i][j] == 1:
-                without_transpose_01 += 1
-            if cause_matrix[i][j] == 0 and effect_matrix[i][j] == 0:
-                without_transpose_00 += 1
-            if cause_matrix[j][i] == 1 and effect_matrix[i][j] == 1:
-                with_transpose_11 += 1
-            if cause_matrix[j][i] == 1 and effect_matrix[i][j] == 0:
-                with_transpose_10 += 1
-            if cause_matrix[j][i] == 0 and effect_matrix[i][j] == 1:
-                with_transpose_01 += 1
-            if cause_matrix[j][i] == 0 and effect_matrix[i][j] == 0:
-                with_transpose_00 += 1
-    print("Without Transpose:")
-    print(f"A is B's cause and A is B's effect: {without_transpose_11}")
-    print(f"A is B's cause and A is not B's effect: {without_transpose_10}")
-    print(f"A is not B's cause and A is B's effect: {without_transpose_01}")
-    print(f"A is not B's cause and A is not B's effect: {without_transpose_00}")
-    print("With Transpose:")
-    print(f"A is B's cause and B is A's effect: {with_transpose_11}")
-    print(f"A is B's cause and B is not A's effect: {with_transpose_10}")
-    print(f"A is not B's cause and B is A's effect: {with_transpose_01}")
-    print(f"A is not B's cause and B is not A's effect: {with_transpose_00}")
+    usage_before = LLMCurrent.token_usage()
+    matrix = create_cause_effect_matrix(key_points)
+    usage_after = LLMCurrent.token_usage()
+    print(f"Token usage: {usage_after - usage_before}")
+    for i in range(len(matrix)):
+        for j in range(len(matrix[i])):
+            if matrix[i][j] == 1:
+                print(f"{key_points[i]} -> {key_points[j]}")
 
 
 if __name__ == "__main__":
