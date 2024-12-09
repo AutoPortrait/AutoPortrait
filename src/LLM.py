@@ -27,7 +27,7 @@ class LLMZhipuAI:
                 messages=messages,
                 top_p=0.7,
                 temperature=0.80,
-                max_tokens=10000,
+                max_tokens=4095,
                 stream=False,  # 关闭流模式，直接接收完整响
             )
             return result.choices[0].message.content

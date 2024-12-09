@@ -3,6 +3,8 @@ path_prompt_iterate = "prompt/迭代人物画像.txt"
 path_prompt_classify = "prompt/访谈和画像的匹配度.txt"
 path_prompt_cut_interview = "prompt/切割访谈记录.txt"
 path_prompt_extract_key_points = "prompt/提取要点.txt"
+path_prompt_find_causes = "prompt/找出原因.txt"
+path_prompt_find_effects = "prompt/找出影响.txt"
 
 
 class Prompts:
@@ -17,3 +19,7 @@ class Prompts:
             self.prompt_cut_interview = file.read()
         with open(path_prompt_extract_key_points, "r", encoding="utf-8") as file:
             self.prompt_extract_key_points = file.read()
+        with open(path_prompt_find_causes, "r", encoding="utf-8") as file:
+            self.prompt_find_causes = file.read()
+        with open(path_prompt_find_effects, "r", encoding="utf-8") as file:
+            self.prompt_find_effects = file.read()
