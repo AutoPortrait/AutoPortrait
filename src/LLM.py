@@ -26,8 +26,8 @@ class LLMZhipuAI:
                 model="GLM-4-Air",
                 messages=messages,
                 top_p=0.7,
-                temperature=0.95,
-                max_tokens=1024,
+                temperature=0.80,
+                max_tokens=10000,
                 stream=False,  # 关闭流模式，直接接收完整响
             )
             return result.choices[0].message.content
