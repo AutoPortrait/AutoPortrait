@@ -24,19 +24,14 @@ def calculate_score(judgement: str) -> float:
 
 
 def judge_single(portrait: tuple[str, str], interview: str) -> str:
-    return LLMCurrent.process(
-        [
-            {"role": "system", "content": prompts.prompt_classify},
-            {"role": "user", "content": "以下是人物画像：" + portrait[1]},
-            {"role": "user", "content": "以下是访谈记录：" + interview},
-        ]
-    )
+    input = "[人物画像]\n" + portrait[1] + "\n\n[访谈记录]\n" + interview
+    return LLMCurrent.process(prompts.prompt_classify, input)
 
 
 def judge_multi(portrait: tuple[str, str], interview: str) -> str:
     results = [judge_single(portrait, interview) for _ in range(multi_judge)]
     result = ", ".join(results)
-    print(f"  - '{portrait[0]}'组: {result}")
+    # print(f"  - '{portrait[0]}'组: {result}")
     return result
 
 

@@ -1,68 +1,98 @@
-from datetime import datetime
-import os
 from LLM import LLMCurrent
 from Input import Input
 from Prompts import Prompts
 from Classify import classify
+from Split import split
+from MergeInterviewSegments import merge_interview_segments
+from datetime import datetime
+import os
+import shutil
+from tqdm import tqdm
 
-path_portrait = "data/portrait"
+path_output = "output"
+random_dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+path_output = f"{path_output}/{random_dirname}"
+os.mkdir(path_output)
 
 input = Input()
 prompts = Prompts()
 
-dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-os.mkdir(f"{path_portrait}/{dirname}")
 
-portraits = list[tuple[str, int, str]]()  # group name, i, portrait
+# step 0: snapshot input and prompt
+def snapshot_input():
+    stage_dir = f"{path_output}/0_snapshot"
+    os.mkdir(stage_dir)
+    shutil.copytree("input", f"{stage_dir}/input")
+    shutil.copytree("prompt", f"{stage_dir}/prompt")
 
-for group in input.classified:
-    os.mkdir(f"{path_portrait}/{dirname}/{group[0]}")
-    print("-" * os.get_terminal_size().columns)
-    print(f"正在处理'{group[0]}'组:")
 
-    portraits.append([group[0], 0, prompts.initial_portrait])
+# step 1: iterate initial portraits
+def iterate_portrait(portrait: str, merged: str):
+    input = "[原始群体画像]\n\n" + portrait + "\n\n[个人生活史生命史]\n\n" + merged
+    return LLMCurrent.process(prompts.prompt_iterate, input)
 
-    for data in group[1]:
-        i = portraits[len(portraits) - 1][1]
-        print(f"正在对'{group[0]}'组进行第{i+1}轮迭代")
 
-        portrait = LLMCurrent.process(
-            [
-                {"role": "system", "content": prompts.prompt_iterate},
-                {"role": "user", "content": data},
-                {"role": "user", "content": portraits[len(portraits) - 1][2]},
-            ]
-        )
+def segments_to_str(segments: list[str]) -> str:
+    return "\n\n".join([f"[Segment {i+1}]\n{segment}" for i, segment in enumerate(segments)])
 
-        with open(f"{path_portrait}/{dirname}/{group[0]}/{i}.txt", "w", encoding="utf-8") as file:
-            file.write(portrait)
-        portraits[len(portraits) - 1][1] += 1
-        portraits[len(portraits) - 1][2] = portrait
 
-for uncertain in input.uncertain:
-    print("-" * os.get_terminal_size().columns)
-    print(f"正在处理未分类访谈 '{uncertain[0]}':")
+def iterate_initial_portraits():
+    stage_dir = f"{path_output}/1_iterate_initial_portraits"
+    os.mkdir(stage_dir)
+    for group in input.groups:
+        print(f"Iterating initial portrait for group {group.name}")
+        group_dir = f"{stage_dir}/{group.name}"
+        os.mkdir(group_dir)
+        for i, interview in enumerate(group.initial_interviews):
+            iteration_dir = f"{group_dir}/{i+1}"
+            os.mkdir(iteration_dir)
+            segments = split(interview.data)
+            with open(f"{iteration_dir}/1_interview_segments.txt", "w", encoding="utf-8") as file:
+                file.write(segments_to_str(segments))
+            merged = merge_interview_segments(segments)
+            with open(f"{iteration_dir}/2_merged.txt", "w", encoding="utf-8") as file:
+                file.write(merged)
+            group.portrait = iterate_portrait(group.portrait, merged)
+            with open(f"{iteration_dir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
+                file.write(group.portrait)
 
-    classify_input_groups = [[group, portrait] for [group, _, portrait] in portraits]
-    class_indexes = classify(classify_input_groups, uncertain[1])
-    print(f"分类结果：{[input.classified[i][0] for i in class_indexes]}")
 
-    for index in class_indexes:
-        i = portraits[index][1]
-        group = input.classified[index]
-        print(f"正在对'{group[0]}'组进行第{i+1}轮迭代")
+# step 3: split all interviews and iterate portraits
+def split_and_iterate_portraits():
+    stage_dir = f"{path_output}/3_split_and_iterate_portraits"
+    os.mkdir(stage_dir)
+    for interview in input.interviews:
+        print(f"Splitting and iterating portrait for interview {interview.filename}")
+        interview_dir = f"{stage_dir}/{interview.filename}"
+        os.mkdir(interview_dir)
+        segments = split(interview.data)
+        with open(f"{interview_dir}/unclassified_segments.txt", "w", encoding="utf-8") as file:
+            file.write(segments_to_str(segments))
+        grouped = list[list[str]]()
+        for _ in input.groups:
+            grouped.append([])
+        for segment in tqdm(segments, desc="Classifying segments"):
+            result = classify([[group.name, group.portrait] for group in input.groups], segment)
+            for i in result:
+                grouped[i].append(segment)
+        for group in input.groups:
+            group_dir = f"{interview_dir}/{group.name}"
+            os.mkdir(group_dir)
+            with open(f"{group_dir}/1_grouped_segments.txt", "w", encoding="utf-8") as file:
+                file.write(segments_to_str(grouped[input.groups.index(group)]))
+            merged = merge_interview_segments(grouped[input.groups.index(group)])
+            with open(f"{group_dir}/2_merged.txt", "w", encoding="utf-8") as file:
+                file.write(merged)
+            group.portrait = iterate_portrait(group.portrait, merged)
+            with open(f"{group_dir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
+                file.write(group.portrait)
 
-        portrait = LLMCurrent.process(
-            [
-                {"role": "system", "content": prompts.prompt_iterate},
-                {"role": "user", "content": uncertain[1]},
-                {"role": "user", "content": portraits[index][2]},
-            ]
-        )
 
-        with open(
-            f"{path_portrait}/{dirname}/{input.classified[index][0]}/{i}.txt", "w", encoding="utf-8"
-        ) as file:
-            file.write(portrait)
-        portraits[index][1] += 1
-        portraits[index][2] = portrait
+def main():
+    snapshot_input()
+    iterate_initial_portraits()
+    split_and_iterate_portraits()
+
+
+if __name__ == "__main__":
+    main()

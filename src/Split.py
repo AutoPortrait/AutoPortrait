@@ -65,7 +65,7 @@ def main():
     from Input import Input
 
     input = Input()
-    example = input.uncertain[0][1]
+    example = input.interviews[0].data
     result = split(example)
     for entry in enumerate(result):
         print(f"[Entry {entry[0]}]")
