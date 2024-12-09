@@ -15,7 +15,7 @@ os.mkdir(f"{path_portrait}/{dirname}")
 
 portraits = list[tuple[str, int, str]]()  # group name, i, portrait
 
-for group in input.list_data:
+for group in input.classified:
     os.mkdir(f"{path_portrait}/{dirname}/{group[0]}")
     print("-" * os.get_terminal_size().columns)
     print(f"正在处理'{group[0]}'组:")
@@ -39,17 +39,17 @@ for group in input.list_data:
         portraits[len(portraits) - 1][1] += 1
         portraits[len(portraits) - 1][2] = portrait
 
-for uncertain in input.uncertain_data:
+for uncertain in input.uncertain:
     print("-" * os.get_terminal_size().columns)
     print(f"正在处理未分类访谈 '{uncertain[0]}':")
 
     classify_input_groups = [[group, portrait] for [group, _, portrait] in portraits]
     class_indexes = classify(classify_input_groups, uncertain[1])
-    print(f"分类结果：{[input.list_data[i][0] for i in class_indexes]}")
+    print(f"分类结果：{[input.classified[i][0] for i in class_indexes]}")
 
     for index in class_indexes:
         i = portraits[index][1]
-        group = input.list_data[index]
+        group = input.classified[index]
         print(f"正在对'{group[0]}'组进行第{i+1}轮迭代")
 
         portrait = LLMCurrent.process(
@@ -61,7 +61,7 @@ for uncertain in input.uncertain_data:
         )
 
         with open(
-            f"{path_portrait}/{dirname}/{input.list_data[index][0]}/{i}.txt", "w", encoding="utf-8"
+            f"{path_portrait}/{dirname}/{input.classified[index][0]}/{i}.txt", "w", encoding="utf-8"
         ) as file:
             file.write(portrait)
         portraits[index][1] += 1

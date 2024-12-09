@@ -51,20 +51,20 @@ def load_interview(filename: str) -> str:
 
 class Input:
     def __init__(self):
-        self.list_data = list[str, list[str]]()  # group name, data list
+        self.classified = list[tuple[str, list[str]]]()  # group name, data list
         with open(path_interview_group_index, "r", encoding="utf-8") as group_index_file:
             group_index_lines = group_index_file.read().splitlines()
             group_index_pairs = [line.split(sep=",") for line in group_index_lines]
             for group_index_pair in group_index_pairs:
-                self.list_data.append([group_index_pair[0], []])
+                self.classified.append([group_index_pair[0], []])
                 with open(
                     f"{path_interview_directory}/{group_index_pair[1]}", "r", encoding="utf-8"
                 ) as group_index_file:
                     filenames = group_index_file.read().splitlines()
                     for filename in filenames:
-                        self.list_data[len(self.list_data) - 1][1].append(load_interview(filename))
-        self.uncertain_data = list[tuple[str, str]]()  # filename, data
+                        self.classified[len(self.classified) - 1][1].append(load_interview(filename))
+        self.uncertain = list[tuple[str, str]]()  # filename, data
         with open(path_interview_uncertain_index, "r", encoding="utf-8") as uncertain_index_file:
             filenames = uncertain_index_file.read().splitlines()
             for filename in filenames:
-                self.uncertain_data.append([filename, load_interview(filename)])
+                self.uncertain.append([filename, load_interview(filename)])

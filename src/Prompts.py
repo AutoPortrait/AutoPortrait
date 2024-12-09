@@ -1,6 +1,7 @@
 path_initial_portrait = "prompt/初始人物画像.txt"
 path_prompt_iterate = "prompt/迭代人物画像.txt"
 path_prompt_classify = "prompt/访谈和画像的匹配度.txt"
+path_prompt_cut_interview = "prompt/切割访谈记录.txt"
 
 
 class Prompts:
@@ -11,3 +12,5 @@ class Prompts:
             self.prompt_iterate = file.read()
         with open(path_prompt_classify, "r", encoding="utf-8") as file:
             self.prompt_classify = file.read()
+        with open(path_prompt_cut_interview, "r", encoding="utf-8") as file:
+            self.prompt_cut_interview = file.read()
