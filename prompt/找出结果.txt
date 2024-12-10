@@ -29,4 +29,7 @@ OUTPUT BEGIN
 12 7 由于应用领域广泛，所以人工智能是一个生机勃勃的学科，所以12是7的结果。
 12 13 由于人工智能是一个新兴学科，所以人工智能可能是一个生机勃勃的学科，所以12是13的结果。
 OUTPUT END
+EXAMPLE EXPLANATION BEGIN
+按照要求，每一行的格式都是“i j 解释”，且没有多余的内容。
+EXAMPLE EXPLANATION END
 EXAMPLE END

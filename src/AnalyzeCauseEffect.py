@@ -6,30 +6,41 @@ import numpy as np
 prompts = Prompts()
 
 
+def try_parse_llm_result(result: str, n: int) -> tuple[bool, list[tuple[int, int]]]:
+    if result.count("\n\n") > 0:
+        result_parts = result.split("\n\n")
+        for result_part in result_parts:
+            failed, relations = try_parse_llm_result(result_part, n)
+            if not failed:
+                return failed, relations
+    lines = result.split("\n")
+    failed = False
+    relations = []
+    for line in lines:
+        parts = line.split(" ")
+        if len(parts) < 2:
+            failed = True
+            break
+        try:
+            idx_1 = int(parts[0])
+            idx_2 = int(parts[1])
+        except ValueError:
+            failed = True
+            break
+        if idx_1 < 1 or idx_1 > n or idx_2 < 1 or idx_2 > n:
+            failed = True
+            break
+        relations.append((idx_1 - 1, idx_2 - 1))
+    return failed, relations
+
+
 def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
     message = "\n".join([f"{i + 1} {thing}" for i, thing in enumerate(things)])
     while True:
         result = LLMCurrent.process(prompt, message).strip()
         if result == "NONE":
             return []
-        lines = result.split("\n")
-        failed = False
-        relations = []
-        for line in lines:
-            parts = line.split(" ")
-            if len(parts) < 2:
-                failed = True
-                break
-            try:
-                idx_1 = int(parts[0])
-                idx_2 = int(parts[1])
-            except ValueError:
-                failed = True
-                break
-            if idx_1 < 1 or idx_1 > len(things) or idx_2 < 1 or idx_2 > len(things):
-                failed = True
-                break
-            relations.append((idx_1 - 1, idx_2 - 1))
+        failed, relations = try_parse_llm_result(result, len(things))
         if failed:
             warnings.warn(f"Failed to parse result:\n{result}\nRetry.")
             continue
