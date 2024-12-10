@@ -37,6 +37,8 @@ def segments_to_str(segments: list[str]) -> str:
 
 
 def iterate_portrait(group: Group, segments: list[str], workdir: str):
+    if len(segments) == 0:
+        return
     usage_before = LLMCurrent.token_usage()
     with open(f"{workdir}/1_interview_segments.txt", "w", encoding="utf-8") as file:
         file.write(segments_to_str(segments))
