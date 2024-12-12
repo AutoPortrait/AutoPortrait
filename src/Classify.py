@@ -2,7 +2,7 @@ from LLM import LLMCurrent
 from Prompts import Prompts
 import warnings
 
-multi_judge = 3
+multi_judge = 2
 
 prompts = Prompts()
 
@@ -23,20 +23,11 @@ def calculate_score(judgement: str) -> float:
     return score / count
 
 
-def judge_single(portrait: tuple[str, str], interview: str) -> str:
-    return LLMCurrent.process(
-        [
-            {"role": "system", "content": prompts.prompt_classify},
-            {"role": "user", "content": "以下是人物画像：" + portrait[1]},
-            {"role": "user", "content": "以下是访谈记录：" + interview},
-        ]
-    )
-
-
 def judge_multi(portrait: tuple[str, str], interview: str) -> str:
-    results = [judge_single(portrait, interview) for _ in range(multi_judge)]
+    input = "[人物画像]\n" + portrait[1] + "\n\n[访谈记录]\n" + interview
+    results = LLMCurrent.batch_process(prompts.prompt_classify, input, multi_judge)
     result = ", ".join(results)
-    print(f"  - '{portrait[0]}'组: {result}")
+    # print(f"  - '{portrait[0]}'组: {result}")
     return result
 
 
@@ -47,4 +38,6 @@ def classify(original_portraits: list[tuple[str, str]], interview: str) -> list[
     for i, score in enumerate(scores):
         if score == max_score:
             ret.append(i)
+    if len(ret) > 1:
+        ret = []
     return ret
