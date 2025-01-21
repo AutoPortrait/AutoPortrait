@@ -1,6 +1,7 @@
 from LLM import LLMCurrent
 from Prompts import Prompts
 from tqdm import tqdm
+from Merge import merge
 
 prompts = Prompts()
 
@@ -19,6 +20,7 @@ def generate_addition(portrait: str, segment: str, analysis: str) -> str:
 
 def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], progress=True) -> str:
     assert len(segments) == len(analysis)
+    additions = []
     for i in tqdm(
         range(1 * len(segments)),
         desc="Iterating Portrait",
@@ -27,8 +29,8 @@ def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], pr
     ):
         j = i % len(segments)
         addition = generate_addition(portrait, segments[j], analysis[j])
-        portrait = portrait + "\n\n" + addition
-    return portrait
+        additions.append(addition)
+    return merge(portrait, additions)
 
 
 def main():
