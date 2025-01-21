@@ -3,9 +3,10 @@ from Input import Input, Group
 from Prompts import Prompts
 from Classify import classify
 from Split import split
-from MergeInterviewSegments import merge_interview_segments
+from AnalyzeSegments import analyze_segments
 from ExtractKeyPoints import extract_key_points
 from AnalyzeCauseEffect import create_cause_effect_matrix
+from IteratePortrait import iterate_portrait
 from datetime import datetime
 import os
 import shutil
@@ -36,17 +37,16 @@ def segments_to_str(segments: list[str]) -> str:
     return "\n".join([f"[Segment {i+1}]\n{segment}" for i, segment in enumerate(segments)])
 
 
-def iterate_portrait(group: Group, segments: list[str], workdir: str):
+def iterate(group: Group, segments: list[str], workdir: str):
     if len(segments) == 0:
         return
     usage_before = LLMCurrent.token_usage()
     with open(f"{workdir}/1_interview_segments.txt", "w", encoding="utf-8") as file:
         file.write(segments_to_str(segments))
-    merged = merge_interview_segments(segments)
-    with open(f"{workdir}/2_merged.txt", "w", encoding="utf-8") as file:
-        file.write(merged)
-    input = "[原始群体画像]\n\n" + group.portrait + "\n\n[个人生活史生命史]\n\n" + merged
-    group.portrait = LLMCurrent.process(prompts.prompt_iterate, input)
+    analysis = analyze_segments(segments)
+    with open(f"{workdir}/2_analysis.txt", "w", encoding="utf-8") as file:
+        file.write("\n\n".join([f"[Analysis {i}]\n{analysis[i]}" for i in range(len(analysis))]))
+    group.portrait = iterate_portrait(group.portrait, segments, analysis)
     with open(f"{workdir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
         file.write(group.portrait)
     if not debug_split_interviews_and_iterate_portraits:
@@ -75,7 +75,7 @@ def iterate_initial_portraits():
             iteration_dir = f"{group_dir}/{i+1}_{interview.filename}"
             os.mkdir(iteration_dir)
             segments = split(interview.data)
-            iterate_portrait(group, segments, iteration_dir)
+            iterate(group, segments, iteration_dir)
             if debug_split_interviews_and_iterate_portraits:
                 break
 
@@ -111,7 +111,7 @@ def split_interviews_and_iterate_portraits():
         for j, group in enumerate(input.groups):
             group_dir = f"{interview_dir}/{group.name}"
             os.mkdir(group_dir)
-            iterate_portrait(group, grouped[j], group_dir)
+            iterate(group, grouped[j], group_dir)
 
 
 def main():
