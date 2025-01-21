@@ -1,13 +1,23 @@
 from LLM import LLMCurrent
 from Prompts import Prompts
+from tqdm import tqdm
 
 prompts = Prompts()
 
 
-def merge_interview_segments(interview_segments: list[str]) -> str:
-    with_header = [f"[访谈片段 {i+1}]\n\n{segment}" for i, segment in enumerate(interview_segments)]
-    input = "\n\n".join(with_header)
-    return LLMCurrent.process(prompts.prompt_merge_interview_segments, input)
+def merge_interview_segments(interview_segments: list[str], progress=True) -> str:
+    results = ""
+    for i in tqdm(
+        range(len(interview_segments)),
+        desc="Analyzing segments",
+        leave=False,
+        disable=not progress,
+    ):
+        result = LLMCurrent.process(
+            prompts.prompt_analyze_interview_segments, interview_segments[i]
+        )
+        results += f"[特点描述 {i+1}]\n{result}\n\n"
+    return results
 
 
 def main():

@@ -74,7 +74,7 @@ def iterate_initial_portraits():
         for i, interview in enumerate(group.initial_interviews):
             iteration_dir = f"{group_dir}/{i+1}_{interview.filename}"
             os.mkdir(iteration_dir)
-            segments = [interview.data]
+            segments = split(interview.data)
             iterate_portrait(group, segments, iteration_dir)
             if debug_split_interviews_and_iterate_portraits:
                 break

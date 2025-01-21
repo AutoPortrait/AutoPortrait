@@ -32,9 +32,18 @@ prompts = Prompts()
 def split(original_text: str) -> list[str]:
     entry_str_list = to_list(remove_metadata(original_text))
     entry_list = [InterviewEntry(entry_str) for entry_str in entry_str_list]
+    tried_cnt = 0
     while True:
+        tried_cnt += 1
         times_str = LLMCurrent.process(prompts.prompt_cut_interview, original_text)
         times_list = times_str.strip().split("\n")
+        entry_min = len(entry_list) / 10
+        entry_max = len(entry_list) / 3
+        if (len(times_list) + 1 < entry_min or len(times_list) + 1 > entry_max) and tried_cnt < 5:
+            warnings.warn(
+                f"Number of entries {len(times_list)} out of range {entry_min}-{entry_max}. Retry."
+            )
+            continue
         fail = False
         for time in times_list:
             match = list(filter(lambda x: x.time == time, entry_list))
