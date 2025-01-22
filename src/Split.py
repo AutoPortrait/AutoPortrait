@@ -1,6 +1,7 @@
 from LLM import LLMCurrent
 from Prompts import Prompts
 import warnings
+import re
 
 
 def remove_metadata(text: str) -> str:
@@ -36,7 +37,8 @@ def split(original_text: str) -> list[str]:
     while True:
         tried_cnt += 1
         times_str = LLMCurrent.process(prompts.prompt_cut_interview, original_text)
-        times_list = times_str.strip().split("\n")
+        times_list = [s.strip() for s in times_str.strip().split("\n")]
+        times_list = list(filter(lambda x: re.match(r"^\d{2}:\d{2}$", x), times_list))
         entry_min = len(entry_list) / 10
         entry_max = len(entry_list) / 3
         if (len(times_list) + 1 < entry_min or len(times_list) + 1 > entry_max) and tried_cnt < 5:
