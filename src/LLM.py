@@ -66,4 +66,4 @@ class LLMZhipuAI:
         return self.token_count
 
 
-LLMCurrent: LLMAbstract = LLMZhipuAI("GLM-4-Air", 0.7, 0.80, 4095)
+LLMCurrent: LLMAbstract = LLMZhipuAI("GLM-4-Plus", 0.7, 0.80, 4095)
