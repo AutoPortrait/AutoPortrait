@@ -14,11 +14,25 @@ from tqdm import tqdm
 import warnings
 
 debug_split_interviews_and_iterate_portraits = False
+extract_key_points_and_cause_effect = False
+continue_last_run = True
 
-path_output = "output"
-random_dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-path_output = f"{path_output}/{random_dirname}"
-os.mkdir(path_output)
+if continue_last_run:
+    path_output = "output"
+    last_run = sorted(os.listdir(path_output))[-1]
+    path_output = f"{path_output}/{last_run}"
+    print(f"Continuing last run '{last_run}'")
+else:
+    path_output = "output"
+    random_dirname = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    path_output = f"{path_output}/{random_dirname}"
+    os.mkdir(path_output)
+
+
+def ensure_dir_exists(path: str):
+    if not os.path.exists(path):
+        os.mkdir(path)
+
 
 input = Input()
 prompts = Prompts()
@@ -26,6 +40,9 @@ prompts = Prompts()
 
 # step 0: snapshot input and prompt
 def snapshot_input():
+    if continue_last_run:
+        print("Continuing last run, skipping snapshot")
+        return
     stage_dir = f"{path_output}/0_snapshot"
     os.mkdir(stage_dir)
     shutil.copytree("input", f"{stage_dir}/input")
@@ -33,8 +50,25 @@ def snapshot_input():
 
 
 # step 1: iterate initial portraits
-def segments_to_str(segments: list[str]) -> str:
-    return "\n".join([f"[Segment {i+1}]\n{segment}" for i, segment in enumerate(segments)])
+def segments_to_str(segments: list[str], header="Segment") -> str:
+    return "\n".join([f"[{header} {i+1}]\n{segment}" for i, segment in enumerate(segments)])
+
+
+def str_to_segments(data: str, header="Segment") -> list[str]:
+    segments_with_prefix = data.split(f"[{header} ")
+    segments = []
+    cnt = 0
+    for segment_with_prefix in segments_with_prefix:
+        if segment_with_prefix == "":
+            continue
+        cnt += 1
+        # segment can have multi lines
+        parts = segment_with_prefix.split("\n", 1)
+        assert len(parts) == 2
+        assert parts[0] == f"{cnt}]"
+        segment = parts[1]
+        segments.append(segment)
+    return segments
 
 
 def iterate(group: Group, segments: list[str], workdir: str):
@@ -43,13 +77,24 @@ def iterate(group: Group, segments: list[str], workdir: str):
     usage_before = LLMCurrent.token_usage()
     with open(f"{workdir}/1_interview_segments.txt", "w", encoding="utf-8") as file:
         file.write(segments_to_str(segments))
-    analysis = analyze_segments(segments)
-    with open(f"{workdir}/2_analysis.txt", "w", encoding="utf-8") as file:
-        file.write("\n\n".join([f"[Analysis {i}]\n{analysis[i]}" for i in range(len(analysis))]))
-    group.portrait = iterate_portrait(group.portrait, segments, analysis)
-    with open(f"{workdir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
-        file.write(group.portrait)
-    if not debug_split_interviews_and_iterate_portraits:
+
+    if os.path.exists(f"{workdir}/2_analysis.txt"):
+        with open(f"{workdir}/2_analysis.txt", "r", encoding="utf-8") as file:
+            analysis = str_to_segments(file.read(), header="Analysis")
+    else:
+        analysis = analyze_segments(segments)
+        with open(f"{workdir}/2_analysis.txt", "w", encoding="utf-8") as file:
+            file.write(segments_to_str(analysis, header="Analysis"))
+
+    if os.path.exists(f"{workdir}/3_new_portrait.txt"):
+        with open(f"{workdir}/3_new_portrait.txt", "r", encoding="utf-8") as file:
+            group.portrait = file.read()
+    else:
+        group.portrait = iterate_portrait(group.portrait, segments, analysis)
+        with open(f"{workdir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
+            file.write(group.portrait)
+
+    if extract_key_points_and_cause_effect:
         key_points = extract_key_points(group.portrait)
         with open(f"{workdir}/4_key_points.txt", "w", encoding="utf-8") as file:
             for i, key_point in enumerate(key_points):
@@ -60,22 +105,32 @@ def iterate(group: Group, segments: list[str], workdir: str):
                 for j in range(len(cause_effect_matrix[i])):
                     if cause_effect_matrix[i][j] == 1:
                         file.write(f"{key_points[i]} -> {key_points[j]}\n")
+
     usage_after = LLMCurrent.token_usage()
     print(f"Used {usage_after - usage_before} tokens for this iteration of group '{group.name}'")
 
 
 def iterate_initial_portraits():
     stage_dir = f"{path_output}/1_iterate_initial_portraits"
-    os.mkdir(stage_dir)
+    ensure_dir_exists(stage_dir)
     for group in input.groups:
         print(f"Iterating initial portrait for group '{group.name}'")
         group_dir = f"{stage_dir}/{group.name}"
-        os.mkdir(group_dir)
+        ensure_dir_exists(group_dir)
         for i, interview in enumerate(group.initial_interviews):
             iteration_dir = f"{group_dir}/{i+1}_{interview.filename}"
-            os.mkdir(iteration_dir)
-            segments = split(interview.data)
+            ensure_dir_exists(iteration_dir)
+
+            if os.path.exists(f"{iteration_dir}/1_interview_segments.txt"):
+                with open(
+                    f"{iteration_dir}/1_interview_segments.txt", "r", encoding="utf-8"
+                ) as file:
+                    segments = str_to_segments(file.read())
+            else:
+                segments = split(interview.data)
+
             iterate(group, segments, iteration_dir)
+
             if debug_split_interviews_and_iterate_portraits:
                 break
 
@@ -92,25 +147,43 @@ def split_interviews_and_iterate_portraits():
     ):
         print(f"Splitting '{interview.filename}' and iterating portrait")
         interview_dir = f"{stage_dir}/{i+1}_{interview.filename}"
-        os.mkdir(interview_dir)
-        segments = split(interview.data)
-        with open(f"{interview_dir}/unclassified_segments.txt", "w", encoding="utf-8") as file:
-            file.write(segments_to_str(segments))
+        ensure_dir_exists(interview_dir)
+
+        if os.path.exists(f"{interview_dir}/unclassified_segments.txt"):
+            with open(f"{interview_dir}/unclassified_segments.txt", "r", encoding="utf-8") as file:
+                segments = str_to_segments(file.read())
+        else:
+            segments = split(interview.data)
+            with open(f"{interview_dir}/unclassified_segments.txt", "w", encoding="utf-8") as file:
+                file.write(segments_to_str(segments))
+
+        classified = True
+        for group in input.groups:
+            if not os.path.exists(f"{interview_dir}/{group.name}"):
+                classified = False
+                break
         grouped = list[list[str]]()
         for _ in input.groups:
             grouped.append([])
-        usage_begin = LLMCurrent.token_usage()
-        for segment in tqdm(segments, desc="Classifying segments", leave=False):
-            result = classify([[group.name, group.portrait] for group in input.groups], segment)
-            for j in result:
-                grouped[j].append(segment)
-        usage_after = LLMCurrent.token_usage()
+        if classified:
+            for j, group in enumerate(input.groups):
+                group_dir = f"{interview_dir}/{group.name}"
+                with open(f"{group_dir}/1_interview_segments.txt", "r", encoding="utf-8") as file:
+                    segments = str_to_segments(file.read())
+                grouped[j] = segments
+        else:
+            usage_begin = LLMCurrent.token_usage()
+            for segment in tqdm(segments, desc="Classifying segments", leave=False):
+                result = classify([[group.name, group.portrait] for group in input.groups], segment)
+                for j in result:
+                    grouped[j].append(segment)
+            usage_after = LLMCurrent.token_usage()
         print(
             f"Used {usage_after - usage_begin} tokens for classifying segments of '{interview.filename}'"
         )
         for j, group in enumerate(input.groups):
             group_dir = f"{interview_dir}/{group.name}"
-            os.mkdir(group_dir)
+            ensure_dir_exists(group_dir)
             iterate(group, grouped[j], group_dir)
 
 
