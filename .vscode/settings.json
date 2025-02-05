@@ -1,5 +1,8 @@
 {
     "[plaintext]": {
         "editor.wordWrap": "on"
+    },
+    "[log]": {
+        "editor.wordWrap": "on"
     }
 }

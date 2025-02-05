@@ -1,7 +1,6 @@
 from LLM import LLMCurrent
 from Prompts import Prompts
 from tqdm import tqdm
-from Merge import merge
 
 prompts = Prompts()
 
@@ -18,7 +17,7 @@ def generate_addition(portrait: str, segment: str, analysis: str) -> str:
     return LLMCurrent.process(prompts.prompt_iterate, input)
 
 
-def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], progress=True) -> str:
+def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], progress=True) -> list[str]:
     assert len(segments) == len(analysis)
     additions = []
     for i in tqdm(
@@ -30,10 +29,12 @@ def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], pr
         j = i % len(segments)
         addition = generate_addition(portrait, segments[j], analysis[j])
         additions.append(addition)
-    return merge(portrait, additions)
+    # return merge(portrait, additions)
+    return additions
 
 
 def main():
+    from Merge import merge
     portrait = """
 这是一个充满活力和抱负的大学生群体，他们正处于人生的关键转折点，既要应对学业上的挑战，也要开始思考未来的职业发展路径。他们以理科专业为主，如法学、公共管理等学科，深受家庭价值观的影响，尤其是那些出自体制内家庭的学生，他们往往将稳定性视为职业选择的首要条件。
 
@@ -100,7 +101,7 @@ def main():
 
 """,
     ]
-    print(iterate_portrait(portrait, segments, analysis))
+    print(merge(portrait, iterate_portrait(portrait, segments, analysis)))
 
 
 if __name__ == "__main__":

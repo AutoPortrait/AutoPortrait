@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMCurrent, LLMPrecise
 from Input import Input, Group
 from Prompts import Prompts
 from Classify import classify
@@ -7,6 +7,7 @@ from AnalyzeSegments import analyze_segments
 from ExtractKeyPoints import extract_key_points
 from AnalyzeCauseEffect import create_cause_effect_matrix
 from IteratePortrait import iterate_portrait
+from Merge import merge
 from datetime import datetime
 import os
 import shutil
@@ -14,8 +15,8 @@ from tqdm import tqdm
 import warnings
 
 debug_split_interviews_and_iterate_portraits = False
-extract_key_points_and_cause_effect = False
-continue_last_run = True
+extract_key_points_and_cause_effect = True
+continue_last_run = False
 
 if continue_last_run:
     path_output = "output"
@@ -86,21 +87,29 @@ def iterate(group: Group, segments: list[str], workdir: str):
         with open(f"{workdir}/2_analysis.txt", "w", encoding="utf-8") as file:
             file.write(segments_to_str(analysis, header="Analysis"))
 
-    if os.path.exists(f"{workdir}/3_new_portrait.txt"):
-        with open(f"{workdir}/3_new_portrait.txt", "r", encoding="utf-8") as file:
+    if os.path.exists(f"{workdir}/3_portrait_addition.txt"):
+        with open(f"{workdir}/3_portrait_addition.txt", "r", encoding="utf-8") as file:
+            additions = str_to_segments(file.read(), header="Addition")
+    else:
+        additions = iterate_portrait(group.portrait, segments, analysis)
+        with open(f"{workdir}/3_portrait_addition.txt", "w", encoding="utf-8") as file:
+            file.write(segments_to_str(additions, header="Addition"))
+
+    if os.path.exists(f"{workdir}/4_new_portrait.txt"):
+        with open(f"{workdir}/4_new_portrait.txt", "r", encoding="utf-8") as file:
             group.portrait = file.read()
     else:
-        group.portrait = iterate_portrait(group.portrait, segments, analysis)
-        with open(f"{workdir}/3_new_portrait.txt", "w", encoding="utf-8") as file:
+        group.portrait = merge(group.portrait, additions)
+        with open(f"{workdir}/4_new_portrait.txt", "w", encoding="utf-8") as file:
             file.write(group.portrait)
 
     if extract_key_points_and_cause_effect:
         key_points = extract_key_points(group.portrait)
-        with open(f"{workdir}/4_key_points.txt", "w", encoding="utf-8") as file:
+        with open(f"{workdir}/5_key_points.txt", "w", encoding="utf-8") as file:
             for i, key_point in enumerate(key_points):
                 file.write(f"{i+1}. {key_point}\n")
         cause_effect_matrix = create_cause_effect_matrix(key_points)
-        with open(f"{workdir}/5_cause_effect.txt", "w", encoding="utf-8") as file:
+        with open(f"{workdir}/6_cause_effect.txt", "w", encoding="utf-8") as file:
             for i in range(len(cause_effect_matrix)):
                 for j in range(len(cause_effect_matrix[i])):
                     if cause_effect_matrix[i][j] == 1:
@@ -189,6 +198,8 @@ def split_interviews_and_iterate_portraits():
 
 def main():
     warnings.simplefilter("always")
+    LLMCurrent.set_logfile(f"{path_output}/llm.log")
+    LLMPrecise.set_logfile(f"{path_output}/llm.log")
     snapshot_input()
     iterate_initial_portraits()
     split_interviews_and_iterate_portraits()
