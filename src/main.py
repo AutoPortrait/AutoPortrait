@@ -16,8 +16,8 @@ import warnings
 import asyncio
 
 debug_split_interviews_and_iterate_portraits = False
-extract_key_points_and_cause_effect = False
-continue_last_run = True
+extract_key_points_and_cause_effect = True
+continue_last_run = False
 
 if continue_last_run:
     path_output = "output"
@@ -131,6 +131,7 @@ async def iterate(group: Group, segments: list[str], workdir: str):
             key_points = await extract_key_points(group.portrait)
             with open(f"{workdir}/5_key_points.txt", "w", encoding="utf-8") as file:
                 file.write(segments_to_str(key_points, header="Key Point"))
+        report_usage(f"Key Point")
         if not os.path.exists(f"{workdir}/6_cause_effect.txt"):
             cause_effect_matrix = await create_cause_effect_matrix(key_points)
             with open(f"{workdir}/6_cause_effect.txt", "w", encoding="utf-8") as file:
@@ -140,7 +141,7 @@ async def iterate(group: Group, segments: list[str], workdir: str):
                             file.write(
                                 f"{100*cause_effect_matrix[i][j]:.2f}% {key_points[i]} -> {key_points[j]}\n"
                             )
-        report_usage(f"Key Points & Cause Effect")
+        report_usage(f"Cause Effect")
 
 
 async def iterate_initial_portraits():
