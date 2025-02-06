@@ -33,3 +33,5 @@ EXAMPLE EXPLANATION BEGIN
 按照要求，每一行的格式都是“i j 解释”，且没有多余的内容。
 EXAMPLE EXPLANATION END
 EXAMPLE END
+
+（只需要模仿“OUTPUT BEGIN”“OUTPUT END”之间的文本即可，同时无需输出“OUTPUT BEGIN”等标记）

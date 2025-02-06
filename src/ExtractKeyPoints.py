@@ -1,13 +1,14 @@
-from LLM import LLMPrecise
+from LLM import LLMInstructional
 from Prompts import Prompts
 import warnings
 
 prompts = Prompts()
 
 
-def extract_key_points(input: str) -> list[str]:
+async def extract_key_points(input: str) -> list[str]:
     while True:
-        result = LLMPrecise.process(prompts.prompt_extract_key_points, input).strip()
+        result = await LLMInstructional.process(prompts.prompt_extract_key_points, input)
+        result = result.strip()
         if result.find("1.") != -1:
             warnings.warn(f"LLM output includes '1.'. Content:\n{result}\nRetry.")
             continue
@@ -16,6 +17,9 @@ def extract_key_points(input: str) -> list[str]:
             continue
         if result.find("\n\n") != -1:
             warnings.warn(f"LLM output includes empty line. Content:\n{result}\nRetry.")
+            continue
+        if len(result.split("\n")) < 3:
+            warnings.warn(f"LLM output is too short. Content:\n{result}\nRetry.")
             continue
         return [line.strip() for line in result.split("\n")]
 

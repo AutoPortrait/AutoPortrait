@@ -1,4 +1,5 @@
-from LLM import LLMPrecise
+import asyncio
+from LLM import LLMFast
 from Prompts import Prompts
 import warnings
 
@@ -23,16 +24,20 @@ def calculate_score(judgement: str) -> float:
     return score / count
 
 
-def judge_multi(portrait: tuple[str, str], interview: str) -> str:
+async def judge_multi(portrait: tuple[str, str], interview: str) -> str:
     input = "[人物画像]\n" + portrait[1] + "\n\n[访谈记录]\n" + interview
-    results = LLMPrecise.batch_process(prompts.prompt_classify, input, multi_judge)
+    # results = LLMPrecise.batch_process(prompts.prompt_classify, input, multi_judge)
+    results = [LLMFast.process(prompts.prompt_classify, input) for _ in range(multi_judge)]
+    results = await asyncio.gather(*results)
     result = ", ".join(results)
     # print(f"  - '{portrait[0]}'组: {result}")
     return result
 
 
-def classify(original_portraits: list[tuple[str, str]], interview: str) -> list[int]:
-    scores = [calculate_score(judge_multi(portrait, interview)) for portrait in original_portraits]
+async def classify(original_portraits: list[tuple[str, str]], interview: str) -> list[int]:
+    results = [judge_multi(portrait, interview) for portrait in original_portraits]
+    results = await asyncio.gather(*results)
+    scores = [calculate_score(result) for result in results]
     max_score = max(scores)
     ret = list[int]()
     for i, score in enumerate(scores):

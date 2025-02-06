@@ -1,23 +1,30 @@
+from typing import Awaitable
 from LLM import LLMFast
 from Prompts import Prompts
-from tqdm import tqdm
+from tqdm.asyncio import tqdm
 
 prompts = Prompts()
 
 
-def analyze_segments(interview_segments: list[str], progress=True) -> list[str]:
-    results = []
-    for i in tqdm(
-        range(len(interview_segments)),
-        desc="Analyzing segments",
-        leave=False,
-        disable=not progress,
-    ):
+async def analyze_segments(interview_segments: list[str], progress=True) -> list[str]:
+    results: list[Awaitable[str]] = []
+    # for i in tqdm(
+    #     range(len(interview_segments)),
+    #     desc="Analyzing segments",
+    #     leave=False,
+    #     disable=not progress,
+    # ):
+    for i in range(len(interview_segments)):
         result = LLMFast.process(
             prompts.prompt_analyze_interview_segments, interview_segments[i]
         )
         results.append(result)
-    return results
+    return await tqdm.gather(
+        *results,
+        desc="Analyzing segments",
+        leave=False,
+        disable=not progress,
+    )
 
 
 def main():

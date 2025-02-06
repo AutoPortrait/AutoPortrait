@@ -37,3 +37,5 @@ OUTPUT BEGIN
 人工智能是一个新兴学科
 OUTPUT END
 EXAMPLE END
+
+（只需要模仿“OUTPUT BEGIN”“OUTPUT END”之间的文本即可，同时无需输出“OUTPUT BEGIN”等标记）

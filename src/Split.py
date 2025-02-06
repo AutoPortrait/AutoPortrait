@@ -1,4 +1,4 @@
-from LLM import LLMPrecise
+from LLM import LLMInstructional
 from Prompts import Prompts
 import warnings
 import re
@@ -30,7 +30,7 @@ class InterviewEntry:
 prompts = Prompts()
 
 
-def split(original_text: str) -> list[str]:
+async def split(original_text: str) -> list[str]:
     entry_str_list = to_list(remove_metadata(original_text))
     entry_list = [InterviewEntry(entry_str) for entry_str in entry_str_list]
     tried_cnt = 0
@@ -42,7 +42,7 @@ def split(original_text: str) -> list[str]:
             entry_min,
             entry_max,
         )
-        times_str = LLMPrecise.process(prompt, original_text)
+        times_str = await LLMInstructional.process(prompt, original_text)
         times_list = [s.strip() for s in times_str.strip().split("\n")]
         times_list = list(filter(lambda x: re.match(r"^\d{2}:\d{2}$", x), times_list))
         if (len(times_list) < entry_min or len(times_list) > entry_max) and tried_cnt < 5:

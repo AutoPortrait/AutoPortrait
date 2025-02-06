@@ -1,3 +1,5 @@
+from tqdm.asyncio import tqdm
+from typing import Awaitable
 from LLM import LLMFast
 from Prompts import Prompts
 import warnings
@@ -34,10 +36,11 @@ def try_parse_llm_result(result: str, n: int) -> tuple[bool, list[tuple[int, int
     return failed, relations
 
 
-def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
+async def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
     message = "\n".join([f"{i + 1} {thing}" for i, thing in enumerate(things)])
     while True:
-        result = LLMFast.process(prompt, message).strip()
+        result = await LLMFast.process(prompt, message)
+        result = result.strip()
         if result == "NONE":
             return []
         failed, relations = try_parse_llm_result(result, len(things))
@@ -48,24 +51,24 @@ def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
             return relations
 
 
-def create_relation_matrix(prompt: str, things: list[str]) -> np.array:
-    relations = query_relations(prompt, things)
+async def create_relation_matrix(prompt: str, things: list[str]) -> np.array:
+    relations = await query_relations(prompt, things)
     matrix = np.zeros((len(things), len(things)))
     for relation in relations:
         matrix[relation[0]][relation[1]] = 1
     return matrix
 
 
-def create_cause_effect_matrix(things: list[str]) -> list[list[int]]:
-    cause_matrixes = []
+async def create_cause_effect_matrix(things: list[str]) -> list[list[int]]:
+    matrixes: list[Awaitable[np.array]] = []
     for i in range(3):
-        cause_matrixes.append(create_relation_matrix(prompts.prompt_find_causes, things))
-    effect_matrixes = []
+        matrixes.append(create_relation_matrix(prompts.prompt_find_causes, things))
     for i in range(3):
-        effect_matrixes.append(create_relation_matrix(prompts.prompt_find_effects, things))
+        matrixes.append(create_relation_matrix(prompts.prompt_find_effects, things))
+    matrixes = await tqdm.gather(*matrixes, desc="Analyzing Cause-Effect", leave=False)
     result_matrix = np.zeros((len(things), len(things)))
     for i in range(3):
-        result_matrix += 1 / 6 * cause_matrixes[i] + 1 / 6 * np.transpose(effect_matrixes[i])
+        result_matrix += 1 / 6 * matrixes[i] + 1 / 6 * np.transpose(matrixes[i + 3])
     # result_matrix = np.where(result_matrix > 0.5, 1, 0)
     return result_matrix.tolist()
 
