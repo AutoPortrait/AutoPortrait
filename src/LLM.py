@@ -131,7 +131,7 @@ class LLMOpenAICompatible(LLMAbstract):
 
 
 load_dotenv()
-LLMCurrent: LLMAbstract = LLMOpenAICompatible(
+LLMFast: LLMAbstract = LLMOpenAICompatible(
     base_url="https://open.bigmodel.cn/api/paas/v4/",
     api_key=os.getenv("ZHIPU_KEY"),
     model_name="GLM-4-Plus",
@@ -143,8 +143,13 @@ LLMPrecise: LLMAbstract = LLMOpenAICompatible(
     base_url="https://api.siliconflow.cn/v1",
     api_key=os.getenv("SILICON_FLOW_API_KEY"),
     model_name="deepseek-ai/DeepSeek-R1",
-    # base_url="https://openrouter.ai/api/v1",
-    # api_key=os.getenv("OPENROUTER_API_KEY"),
-    # model_name="deepseek/deepseek-r1:free",
+    temperature=0.00,
+    console_log=True,
+)
+LLMCreative: LLMAbstract = LLMOpenAICompatible(
+    base_url="https://api.siliconflow.cn/v1",
+    api_key=os.getenv("SILICON_FLOW_API_KEY"),
+    model_name="deepseek-ai/DeepSeek-R1",
+    temperature=1.50,
     console_log=True,
 )

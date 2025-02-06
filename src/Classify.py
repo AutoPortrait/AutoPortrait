@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMPrecise
 from Prompts import Prompts
 import warnings
 
@@ -25,7 +25,7 @@ def calculate_score(judgement: str) -> float:
 
 def judge_multi(portrait: tuple[str, str], interview: str) -> str:
     input = "[人物画像]\n" + portrait[1] + "\n\n[访谈记录]\n" + interview
-    results = LLMCurrent.batch_process(prompts.prompt_classify, input, multi_judge)
+    results = LLMPrecise.batch_process(prompts.prompt_classify, input, multi_judge)
     result = ", ".join(results)
     # print(f"  - '{portrait[0]}'组: {result}")
     return result

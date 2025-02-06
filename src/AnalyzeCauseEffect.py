@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMFast
 from Prompts import Prompts
 import warnings
 import numpy as np
@@ -37,7 +37,7 @@ def try_parse_llm_result(result: str, n: int) -> tuple[bool, list[tuple[int, int
 def query_relations(prompt: str, things: list[str]) -> list[tuple[int, int]]:
     message = "\n".join([f"{i + 1} {thing}" for i, thing in enumerate(things)])
     while True:
-        result = LLMCurrent.process(prompt, message).strip()
+        result = LLMFast.process(prompt, message).strip()
         if result == "NONE":
             return []
         failed, relations = try_parse_llm_result(result, len(things))
@@ -66,7 +66,7 @@ def create_cause_effect_matrix(things: list[str]) -> list[list[int]]:
     result_matrix = np.zeros((len(things), len(things)))
     for i in range(3):
         result_matrix += 1 / 6 * cause_matrixes[i] + 1 / 6 * np.transpose(effect_matrixes[i])
-    result_matrix = np.where(result_matrix > 0.5, 1, 0)
+    # result_matrix = np.where(result_matrix > 0.5, 1, 0)
     return result_matrix.tolist()
 
 
@@ -99,14 +99,15 @@ def main():
     for i, key_point in enumerate(key_points):
         print(f"{i + 1}. {key_point}")
 
-    usage_before = LLMCurrent.token_usage()
+    usage_before = LLMFast.token_usage()
     matrix = create_cause_effect_matrix(key_points)
-    usage_after = LLMCurrent.token_usage()
+    usage_after = LLMFast.token_usage()
     print(f"Token usage: {usage_after - usage_before}")
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
-            if matrix[i][j] == 1:
-                print(f"{key_points[i]} -> {key_points[j]}")
+            # if matrix[i][j] == 1:
+            if matrix[i][j] > 0:
+                print(f"{100*matrix[i][j]:.2f}% {key_points[i]} -> {key_points[j]}")
 
 
 if __name__ == "__main__":

@@ -45,7 +45,7 @@ def split(original_text: str) -> list[str]:
         times_str = LLMPrecise.process(prompt, original_text)
         times_list = [s.strip() for s in times_str.strip().split("\n")]
         times_list = list(filter(lambda x: re.match(r"^\d{2}:\d{2}$", x), times_list))
-        if (len(times_list) + 1 < entry_min or len(times_list) + 1 > entry_max) and tried_cnt < 5:
+        if (len(times_list) < entry_min or len(times_list) > entry_max) and tried_cnt < 5:
             warnings.warn(
                 f"Number of entries {len(times_list)} out of range {entry_min}-{entry_max}. Retry."
             )

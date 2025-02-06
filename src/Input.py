@@ -1,4 +1,4 @@
-from LLM import LLMCurrent, LLMProcessError
+from LLM import LLMFast, LLMProcessError
 import os
 
 path_input_directory = "input"
@@ -17,7 +17,7 @@ class Interview:
             return text
         try:
             print(f"检查 {len(text)} 字 ... ", end="", flush=True)
-            LLMCurrent.process("", text)
+            LLMFast.process("", text)
             print("合规")
             return text
         except LLMProcessError as e:

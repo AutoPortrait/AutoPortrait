@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMFast
 from Prompts import Prompts
 from tqdm import tqdm
 
@@ -14,7 +14,7 @@ def generate_addition(portrait: str, segment: str, analysis: str) -> str:
         + "\n\n[分析]\n\n"
         + analysis
     )
-    return LLMCurrent.process(prompts.prompt_iterate, input)
+    return LLMFast.process(prompts.prompt_iterate, input)
 
 
 def iterate_portrait(portrait: str, segments: list[str], analysis: list[str], progress=True) -> list[str]:

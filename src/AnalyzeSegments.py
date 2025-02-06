@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMFast
 from Prompts import Prompts
 from tqdm import tqdm
 
@@ -13,7 +13,7 @@ def analyze_segments(interview_segments: list[str], progress=True) -> list[str]:
         leave=False,
         disable=not progress,
     ):
-        result = LLMCurrent.process(
+        result = LLMFast.process(
             prompts.prompt_analyze_interview_segments, interview_segments[i]
         )
         results.append(result)

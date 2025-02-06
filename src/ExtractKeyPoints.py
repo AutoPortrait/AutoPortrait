@@ -1,4 +1,4 @@
-from LLM import LLMCurrent
+from LLM import LLMPrecise
 from Prompts import Prompts
 import warnings
 
@@ -7,7 +7,7 @@ prompts = Prompts()
 
 def extract_key_points(input: str) -> list[str]:
     while True:
-        result = LLMCurrent.process(prompts.prompt_extract_key_points, input).strip()
+        result = LLMPrecise.process(prompts.prompt_extract_key_points, input).strip()
         if result.find("1.") != -1:
             warnings.warn(f"LLM output includes '1.'. Content:\n{result}\nRetry.")
             continue

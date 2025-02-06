@@ -1,4 +1,4 @@
-from LLM import LLMCurrent, LLMPrecise
+from LLM import LLMFast, LLMPrecise, LLMCreative
 from Input import Input, Group
 from Prompts import Prompts
 from Classify import classify
@@ -75,7 +75,9 @@ def str_to_segments(data: str, header="Segment") -> list[str]:
 def iterate(group: Group, segments: list[str], workdir: str):
     if len(segments) == 0:
         return
-    usage_before = LLMCurrent.token_usage()
+    usage_before_fast = LLMFast.token_usage()
+    usage_before_precise = LLMPrecise.token_usage()
+    usage_before_creative = LLMCreative.token_usage()
     with open(f"{workdir}/1_interview_segments.txt", "w", encoding="utf-8") as file:
         file.write(segments_to_str(segments))
 
@@ -112,11 +114,17 @@ def iterate(group: Group, segments: list[str], workdir: str):
         with open(f"{workdir}/6_cause_effect.txt", "w", encoding="utf-8") as file:
             for i in range(len(cause_effect_matrix)):
                 for j in range(len(cause_effect_matrix[i])):
-                    if cause_effect_matrix[i][j] == 1:
-                        file.write(f"{key_points[i]} -> {key_points[j]}\n")
+                    if cause_effect_matrix[i][j] > 0:
+                        file.write(
+                            f"{100*cause_effect_matrix[i][j]:.2f}% {key_points[i]} -> {key_points[j]}\n"
+                        )
 
-    usage_after = LLMCurrent.token_usage()
-    print(f"Used {usage_after - usage_before} tokens for this iteration of group '{group.name}'")
+    usage_after_fast = LLMFast.token_usage()
+    usage_after_precise = LLMPrecise.token_usage()
+    usage_after_creative = LLMCreative.token_usage()
+    print(
+        f"Used {usage_after_fast - usage_before_fast} tokens for fast model, {usage_after_precise - usage_before_precise} tokens for precise model, {usage_after_creative - usage_before_creative} tokens for creative model"
+    )
 
 
 def iterate_initial_portraits():
@@ -181,12 +189,12 @@ def split_interviews_and_iterate_portraits():
                     segments = str_to_segments(file.read())
                 grouped[j] = segments
         else:
-            usage_begin = LLMCurrent.token_usage()
+            usage_begin = LLMFast.token_usage()
             for segment in tqdm(segments, desc="Classifying segments", leave=False):
                 result = classify([[group.name, group.portrait] for group in input.groups], segment)
                 for j in result:
                     grouped[j].append(segment)
-            usage_after = LLMCurrent.token_usage()
+            usage_after = LLMFast.token_usage()
         print(
             f"Used {usage_after - usage_begin} tokens for classifying segments of '{interview.filename}'"
         )
@@ -198,12 +206,13 @@ def split_interviews_and_iterate_portraits():
 
 def main():
     warnings.simplefilter("always")
-    LLMCurrent.set_logfile(f"{path_output}/llm.log")
+    LLMFast.set_logfile(f"{path_output}/llm.log")
     LLMPrecise.set_logfile(f"{path_output}/llm.log")
+    LLMCreative.set_logfile(f"{path_output}/llm.log")
     snapshot_input()
     iterate_initial_portraits()
     split_interviews_and_iterate_portraits()
-    usage = LLMCurrent.token_usage()
+    usage = LLMFast.token_usage()
     print(f"Used {usage} tokens in total")
 
 
