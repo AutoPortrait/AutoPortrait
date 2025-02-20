@@ -60,8 +60,12 @@ async def split(original_text: str) -> list[str]:
             if len(match) > 1:
                 warnings.warn(f"Multiple entries found for time '{time}'. No retry.")
         if entry_list[0].time != times_list[0]:
-            warnings.warn(f"First entry time '{times_list[0]}' does not match. Retry.")
-            fail = True
+            if tried_cnt <= 3:
+                warnings.warn(f"First entry time '{times_list[0]}' does not match. Retry.")
+                fail = True
+            else:
+                warnings.warn(f"First entry time '{times_list[0]}' does not match. No retry.")
+                times_list.insert(0, entry_list[0].time)
         if not fail:
             result = []
             last = None

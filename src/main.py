@@ -17,7 +17,7 @@ import asyncio
 
 debug_split_interviews_and_iterate_portraits = False
 extract_key_points_and_cause_effect = True
-continue_last_run = False
+continue_last_run = True
 
 if continue_last_run:
     path_output = "output"
