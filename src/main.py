@@ -14,10 +14,11 @@ import shutil
 from tqdm.asyncio import tqdm
 import warnings
 import asyncio
+import sys
 
 debug_split_interviews_and_iterate_portraits = False
 extract_key_points_and_cause_effect = True
-continue_last_run = True
+continue_last_run = False
 
 if continue_last_run:
     path_output = "output"
@@ -232,4 +233,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    with open(f"{path_output}/stdout.log", "w") as sys.stdout:
+        with open(f"{path_output}/stderr.log", "w") as sys.stderr:
+            asyncio.run(main())
