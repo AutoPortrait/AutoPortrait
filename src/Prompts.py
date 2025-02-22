@@ -6,6 +6,7 @@ path_prompt_find_causes = "prompt/找出原因.txt"
 path_prompt_find_effects = "prompt/找出结果.txt"
 path_prompt_analyze_interview_segments = "prompt/分析访谈片段.txt"
 path_prompt_merge = "prompt/合并修改.txt"
+path_encode = "prompt/编码.txt"
 
 
 class Prompts:
@@ -26,3 +27,6 @@ class Prompts:
             self.prompt_analyze_interview_segments = file.read()
         with open(path_prompt_merge, "r", encoding="utf-8") as file:
             self.prompt_merge = file.read()
+        with open(path_encode, "r", encoding="utf-8") as file:
+            self.prompt_encode = file.read()
+        

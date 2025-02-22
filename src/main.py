@@ -17,7 +17,7 @@ import asyncio
 import sys
 
 debug_split_interviews_and_iterate_portraits = False
-extract_key_points_and_cause_effect = True
+# extract_key_points_and_cause_effect = True
 continue_last_run = False
 
 if continue_last_run:
@@ -124,25 +124,31 @@ async def iterate(group: Group, segments: list[str], workdir: str):
             file.write(group.portrait)
     report_usage(f"Merge")
 
-    if extract_key_points_and_cause_effect:
-        if os.path.exists(f"{workdir}/5_key_points.txt"):
-            with open(f"{workdir}/5_key_points.txt", "r", encoding="utf-8") as file:
-                key_points = str_to_segments(file.read(), header="Key Point")
-        else:
-            key_points = await extract_key_points(group.portrait)
-            with open(f"{workdir}/5_key_points.txt", "w", encoding="utf-8") as file:
-                file.write(segments_to_str(key_points, header="Key Point"))
-        report_usage(f"Key Point")
-        if not os.path.exists(f"{workdir}/6_cause_effect.txt"):
-            cause_effect_matrix = await create_cause_effect_matrix(key_points)
-            with open(f"{workdir}/6_cause_effect.txt", "w", encoding="utf-8") as file:
-                for i in range(len(cause_effect_matrix)):
-                    for j in range(len(cause_effect_matrix[i])):
-                        if cause_effect_matrix[i][j] > 0:
-                            file.write(
-                                f"{100*cause_effect_matrix[i][j]:.2f}% {key_points[i]} -> {key_points[j]}\n"
-                            )
-        report_usage(f"Cause Effect")
+    # if extract_key_points_and_cause_effect:
+    #     if os.path.exists(f"{workdir}/5_key_points.txt"):
+    #         with open(f"{workdir}/5_key_points.txt", "r", encoding="utf-8") as file:
+    #             key_points = str_to_segments(file.read(), header="Key Point")
+    #     else:
+    #         key_points = await extract_key_points(group.portrait)
+    #         with open(f"{workdir}/5_key_points.txt", "w", encoding="utf-8") as file:
+    #             file.write(segments_to_str(key_points, header="Key Point"))
+    #     report_usage(f"Key Point")
+    #     if not os.path.exists(f"{workdir}/6_cause_effect.txt"):
+    #         cause_effect_matrix = await create_cause_effect_matrix(key_points)
+    #         with open(f"{workdir}/6_cause_effect.txt", "w", encoding="utf-8") as file:
+    #             for i in range(len(cause_effect_matrix)):
+    #                 for j in range(len(cause_effect_matrix[i])):
+    #                     if cause_effect_matrix[i][j] > 0:
+    #                         file.write(
+    #                             f"{100*cause_effect_matrix[i][j]:.2f}% {key_points[i]} -> {key_points[j]}\n"
+    #                         )
+    #     report_usage(f"Cause Effect")
+
+    if not os.path.exists(f"{workdir}/5_encode.txt"):
+        encode = await LLMFast.process(prompts.prompt_encode, group.portrait)
+        with open(f"{workdir}/5_encode.txt", "w", encoding="utf-8") as file:
+            file.write(encode)
+    report_usage(f"Encode")
 
 
 async def iterate_initial_portraits():

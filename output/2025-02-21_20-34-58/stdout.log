@@ -1,0 +1,108 @@
+Iterating initial portrait for group '体制内'
+ - [Split] Fast: 0, Instructional: 3236
+ - [Analyze] Fast: 11270, Instructional: 0
+ - [Addition] Fast: 17475, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 2878
+ - [Encode] Fast: 2346, Instructional: 0
+Iterating initial portrait for group '体制外'
+ - [Split] Fast: 0, Instructional: 10278
+ - [Analyze] Fast: 23774, Instructional: 0
+ - [Addition] Fast: 41988, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 14309
+ - [Encode] Fast: 2675, Instructional: 0
+ - [Split] Fast: 0, Instructional: 19023
+ - [Analyze] Fast: 18096, Instructional: 0
+ - [Addition] Fast: 42572, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 11520
+ - [Encode] Fast: 3085, Instructional: 0
+Splitting '个案3.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 7967
+ - [Classify] Fast: 167006, Instructional: 0
+ - [Analyze] Fast: 9380, Instructional: 0
+ - [Addition] Fast: 19594, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 4112
+ - [Encode] Fast: 2202, Instructional: 0
+ - [Analyze] Fast: 15190, Instructional: 0
+ - [Addition] Fast: 40683, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 11482
+ - [Encode] Fast: 3025, Instructional: 0
+Splitting '个案4.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 5323
+ - [Classify] Fast: 74688, Instructional: 0
+ - [Analyze] Fast: 4495, Instructional: 0
+ - [Addition] Fast: 11239, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 4234
+ - [Encode] Fast: 2604, Instructional: 0
+ - [Analyze] Fast: 4475, Instructional: 0
+ - [Addition] Fast: 13926, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 7264
+ - [Encode] Fast: 3439, Instructional: 0
+Splitting '个案5.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 4388
+ - [Classify] Fast: 103208, Instructional: 0
+ - [Analyze] Fast: 1815, Instructional: 0
+ - [Addition] Fast: 6223, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 4113
+ - [Encode] Fast: 2852, Instructional: 0
+ - [Analyze] Fast: 8400, Instructional: 0
+ - [Addition] Fast: 33615, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 11386
+ - [Encode] Fast: 3045, Instructional: 0
+Splitting '个案7.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 7886
+ - [Classify] Fast: 97428, Instructional: 0
+ - [Analyze] Fast: 3342, Instructional: 0
+ - [Addition] Fast: 8485, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 3871
+ - [Encode] Fast: 2708, Instructional: 0
+ - [Analyze] Fast: 7984, Instructional: 0
+ - [Addition] Fast: 22662, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 7682
+ - [Encode] Fast: 4319, Instructional: 0
+Splitting '个案8.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 5600
+ - [Classify] Fast: 100461, Instructional: 0
+ - [Analyze] Fast: 2047, Instructional: 0
+ - [Addition] Fast: 9422, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 5205
+ - [Encode] Fast: 3132, Instructional: 0
+ - [Analyze] Fast: 1339, Instructional: 0
+ - [Addition] Fast: 6699, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 4044
+ - [Encode] Fast: 3274, Instructional: 0
+Splitting '个案9.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 3963
+ - [Classify] Fast: 105324, Instructional: 0
+ - [Analyze] Fast: 8199, Instructional: 0
+ - [Addition] Fast: 30595, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 5303
+ - [Encode] Fast: 3499, Instructional: 0
+ - [Analyze] Fast: 755, Instructional: 0
+ - [Addition] Fast: 3060, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 2968
+ - [Encode] Fast: 3440, Instructional: 0
+Splitting '个案10.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 4091
+ - [Classify] Fast: 111125, Instructional: 0
+ - [Analyze] Fast: 4761, Instructional: 0
+ - [Addition] Fast: 21919, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 7997
+ - [Encode] Fast: 3382, Instructional: 0
+ - [Analyze] Fast: 3973, Instructional: 0
+ - [Addition] Fast: 18831, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 9358
+ - [Encode] Fast: 3527, Instructional: 0
+Splitting '个案11.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 7246
+ - [Classify] Fast: 103275, Instructional: 0
+ - [Analyze] Fast: 8516, Instructional: 0
+ - [Addition] Fast: 39812, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 15737
+ - [Encode] Fast: 3747, Instructional: 0
+Splitting '个案12.txt' and iterating portrait
+ - [Split] Fast: 0, Instructional: 8719
+ - [Classify] Fast: 127843, Instructional: 0
+ - [Analyze] Fast: 12621, Instructional: 0
+ - [Addition] Fast: 34570, Instructional: 0
+ - [Merge] Fast: 0, Instructional: 9113
+ - [Encode] Fast: 3677, Instructional: 0
