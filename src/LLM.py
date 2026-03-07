@@ -77,7 +77,7 @@ class LLMOpenAICompatible(LLMAbstract):
                                 log.write(content)
                             result += content
                         last = chunk
-                    tokens = last.usage.total_tokens
+                    tokens = self.__get_usage_from_response(last)
                 else:
                     response = await self.client.chat.completions.create(
                         model=self.model_name,
@@ -90,7 +90,7 @@ class LLMOpenAICompatible(LLMAbstract):
                         max_tokens=self.max_tokens,
                         stream=False,
                     )
-                    tokens = response.usage.total_tokens
+                    tokens = self.__get_usage_from_response(response)
                     result = response.choices[0].message.content
                 end = time.time()
 
@@ -126,6 +126,16 @@ class LLMOpenAICompatible(LLMAbstract):
 
     def set_progress_logfile(self, logfile: str) -> None:
         self.progress_logfile = logfile
+    
+    def __get_usage_from_response(self, response: any) -> int:
+        if response.usage and response.usage.total_tokens:
+            return response.usage.total_tokens
+        else:
+            # warnings.warn(
+            #     f"Warning: total_tokens is None in the response. Setting tokens to 0."
+            # )
+            # warnings.warn(f"Response: {response}")
+            return 0
 
 
 load_dotenv()
@@ -137,24 +147,37 @@ load_dotenv()
 #     temperature=0.80,
 #     max_tokens=4095,
 # )
-LLMFast: LLMAbstract = LLMOpenAICompatible(
-    base_url="https://api.siliconflow.cn/v1",
-    api_key=os.getenv("SILICON_FLOW_API_KEY"),
-    model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
-    top_p=0.00,
-    temperature=0.00,
-    max_tokens=8192,
-    progress_log=True,
-)
-LLMInstructional: LLMAbstract = LLMOpenAICompatible(
-    base_url="https://api.siliconflow.cn/v1",
-    api_key=os.getenv("SILICON_FLOW_API_KEY"),
-    model_name="deepseek-ai/DeepSeek-R1",
-    # base_url="https://api.deepseek.com",
-    # api_key=os.getenv("DEEPSEEK_API_KEY"),
-    # model_name="deepseek-chat",
+
+# LLMFast: LLMAbstract = LLMOpenAICompatible(
+#     base_url="https://api.siliconflow.cn/v1",
+#     api_key=os.getenv("SILICON_FLOW_API_KEY"),
+#     model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+#     top_p=0.00,
+#     temperature=0.00,
+#     max_tokens=8192,
+#     progress_log=True,
+# )
+# LLMInstructional: LLMAbstract = LLMOpenAICompatible(
+#     base_url="https://api.siliconflow.cn/v1",
+#     api_key=os.getenv("SILICON_FLOW_API_KEY"),
+#     model_name="deepseek-ai/DeepSeek-R1",
+#     # base_url="https://api.deepseek.com",
+#     # api_key=os.getenv("DEEPSEEK_API_KEY"),
+#     # model_name="deepseek-chat",
+#     top_p=0.01,
+#     temperature=0.00,
+#     max_tokens=8192,
+#     progress_log=True,
+# )
+
+LLMUniversal: LLMAbstract = LLMOpenAICompatible(
+    base_url="https://api.scnet.cn/api/llm/v1",
+    api_key=os.getenv("SCNET_API_KEY"),
+    model_name="MiniMax-M2.5",
     top_p=0.01,
-    temperature=0.00,
+    temperature=0.01,
     max_tokens=8192,
     progress_log=True,
 )
+LLMFast: LLMAbstract = LLMUniversal
+LLMInstructional: LLMAbstract = LLMUniversal

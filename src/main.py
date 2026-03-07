@@ -239,6 +239,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    with open(f"{path_output}/stdout.log", "w") as sys.stdout:
-        with open(f"{path_output}/stderr.log", "w") as sys.stderr:
+    with open(f"{path_output}/stdout.log", "w", buffering=1) as sys.stdout:
+        with open(f"{path_output}/stderr.log", "w", buffering=1) as sys.stderr:
             asyncio.run(main())
