@@ -1,0 +1,2 @@
+体制内,initial-portrait-体制内.txt,initial-interviews-体制内.txt
+体制外,initial-portrait-体制外.txt,initial-interviews-体制外.txt
