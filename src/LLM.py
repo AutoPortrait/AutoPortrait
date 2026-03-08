@@ -1,3 +1,4 @@
+from typing import Optional
 from typing import Protocol
 import os
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ import warnings
 import time
 import re
 import asyncio
+import random
 
 
 class LLMProcessError(Exception):
@@ -27,7 +29,55 @@ class LLMAbstract(Protocol):
 import time
 import warnings
 import re
-from openai import OpenAI
+from typing import Optional
+
+class APIKeyManager:
+    def __init__(
+        self,
+        api_keys: list[str],
+        cooldown_seconds: float = 60,
+        min_request_interval: float = 20,
+    ):
+        self.api_keys = api_keys
+        self.cooldown_seconds = cooldown_seconds
+        self.min_request_interval = min_request_interval
+        self.key_failure_times: dict[str, float] = {}
+        self.key_last_request_times: dict[str, float] = {}
+
+    def get_available_key(self) -> tuple[Optional[str], float]:
+        now = time.time()
+        available_keys = []
+        min_wait_time = float('inf')
+        
+        for key in self.api_keys:
+            failure_time = self.key_failure_times.get(key, 0)
+            last_request_time = self.key_last_request_times.get(key, 0)
+            
+            failure_elapsed = now - failure_time
+            request_elapsed = now - last_request_time
+            
+            if failure_elapsed >= self.cooldown_seconds and request_elapsed >= self.min_request_interval:
+                available_keys.append(key)
+            else:
+                failure_wait = max(0, self.cooldown_seconds - failure_elapsed)
+                request_wait = max(0, self.min_request_interval - request_elapsed)
+                wait_time = max(failure_wait, request_wait)
+                min_wait_time = min(min_wait_time, wait_time)
+        
+        if available_keys:
+            return random.choice(available_keys), 0
+        else:
+            return None, min_wait_time
+
+    def mark_key_request_sent(self, key: str):
+        self.key_last_request_times[key] = time.time()
+
+    def mark_key_failed(self, key: str):
+        self.key_failure_times[key] = time.time()
+
+    def mark_key_success(self, key: str):
+        if key in self.key_failure_times:
+            del self.key_failure_times[key]
 
 
 class LLMOpenAICompatible(LLMAbstract):
@@ -40,9 +90,12 @@ class LLMOpenAICompatible(LLMAbstract):
         temperature: float = None,
         max_tokens: int = None,
         progress_log: bool = False,
+        cooldown_seconds: float = 60,
+        min_request_interval: float = 20,
     ):
         self.baseurl = base_url
-        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        self.key_manager = APIKeyManager(api_keys, cooldown_seconds, min_request_interval)
         self.model_name = model_name
         self.top_p = top_p
         self.temperature = temperature
@@ -51,12 +104,24 @@ class LLMOpenAICompatible(LLMAbstract):
         self.progress_log = progress_log
         self.logfile = None
 
+    def _create_client(self, api_key: str) -> AsyncOpenAI:
+        return AsyncOpenAI(api_key=api_key, base_url=self.baseurl)
+
     async def process(self, system_message: str, user_message: str) -> str:
         while True:
+            api_key, wait_time = self.key_manager.get_available_key()
+            
+            if api_key is None:
+                warnings.warn(f"所有 API Key 均在冷却中，等待 {wait_time:.1f} 秒...")
+                await asyncio.sleep(wait_time)
+                continue
+            
             try:
+                self.key_manager.mark_key_request_sent(api_key)
+                client = self._create_client(api_key)
                 start = time.time()
                 if self.progress_log:
-                    response = await self.client.chat.completions.create(
+                    response = await client.chat.completions.create(
                         model=self.model_name,
                         messages=[
                             {"role": "system", "content": system_message},
@@ -72,14 +137,13 @@ class LLMOpenAICompatible(LLMAbstract):
                     async for chunk in response:
                         content = chunk.choices[0].delta.content
                         if content:
-                            # print(content, end="", flush=True)
                             with open(self.progress_logfile, "a") as log:
                                 log.write(content)
                             result += content
                         last = chunk
                     tokens = self.__get_usage_from_response(last)
                 else:
-                    response = await self.client.chat.completions.create(
+                    response = await client.chat.completions.create(
                         model=self.model_name,
                         messages=[
                             {"role": "system", "content": system_message},
@@ -111,12 +175,21 @@ class LLMOpenAICompatible(LLMAbstract):
                         log.write(f"\n< response >\n{result}\n\n")
 
                 result: str = result
-                result = re.sub(r"<think>.*?</think>", "", result).strip()
+                result = re.sub(r"<think>.*?</think>", "", result, flags=re.DOTALL).strip()
+                self.key_manager.mark_key_success(api_key)
                 return result
             except Exception as e:
-                warnings.warn(f"API请求失败，正在重试：{e}")
-                await asyncio.sleep(60)
-                continue
+                self.key_manager.mark_key_failed(api_key)
+                warnings.warn(f"API请求失败 (Key: ...{api_key[-8:]}): {e}")
+                remaining_key, _ = self.key_manager.get_available_key()
+                if remaining_key:
+                    warnings.warn(f"切换到其他可用的 API Key 重试...")
+                    continue
+                else:
+                    _, wait_time = self.key_manager.get_available_key()
+                    warnings.warn(f"所有 API Key 均不可用，等待 {wait_time:.1f} 秒后重试...")
+                    await asyncio.sleep(wait_time)
+                    continue
 
     def token_usage(self) -> int:
         return self.token_count
@@ -174,9 +247,10 @@ LLMUniversal: LLMAbstract = LLMOpenAICompatible(
     base_url="https://api.scnet.cn/api/llm/v1",
     api_key=os.getenv("SCNET_API_KEY"),
     model_name="MiniMax-M2.5",
-    top_p=0.01,
-    temperature=0.01,
-    max_tokens=8192,
+    # model_name="DeepSeek-V3.2",
+    top_p=0.9,
+    temperature=0.8,
+    max_tokens=65536,
     progress_log=True,
 )
 LLMFast: LLMAbstract = LLMUniversal
